@@ -16,6 +16,17 @@ It demonstrates Spring Boot dependency injection, MONGOdb repositories, and REST
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 Architecture
 
 +----------------------+
@@ -74,7 +85,7 @@ PUT	/api/accounts/{accountNumber}	Update account holder name	Query param → hol
 DELETE	/api/accounts/{accountNumber}	Delete/Deactivate an account	Path variable → accountNumber	204 No Content
 
 Setup Instructions
-1.	Clone the repository
+1.	Clone the repository (git clone Akhimudiraj/Banking_simulator_springboot , cd Banking_simulator_springboot)
 2.	Configure the database
 3.	Build the project
 4.	Run the application
