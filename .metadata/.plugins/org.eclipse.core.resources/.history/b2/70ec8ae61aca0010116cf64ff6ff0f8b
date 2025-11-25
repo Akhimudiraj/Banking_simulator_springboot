@@ -1,0 +1,5 @@
+spring.application.name=BankinSystem
+
+spring.data.mongodb.uri=mongodb://localhost:27017/bankingsystem
+spring.jackson.serialization.write-dates-as-timestamps=false
+server.port=8080

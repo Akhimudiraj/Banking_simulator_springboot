@@ -1,0 +1,16 @@
+package com.example.demo.model;
+
+
+
+
+@Document(collection = "transactions")
+public class Transaction {
+    @Id
+    private String transactionId;
+    private String type;
+    private Double amount;
+    private String status;
+    private String sourceAccount;
+    private String destinationAccount;
+    // getters & setters
+}

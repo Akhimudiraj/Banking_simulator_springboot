@@ -1,0 +1,9 @@
+spring.application.name=BankinSystem
+
+spring.data.mongodb.uri=mongodb://localhost:27017/bankingsystem
+spring.main.allow-bean-definition-overriding=true
+server.port=8080
+
+# Logging (optional)
+logging.level.org.springframework.web=INFO
+logging.level.com.bankingsystem=DEBUG

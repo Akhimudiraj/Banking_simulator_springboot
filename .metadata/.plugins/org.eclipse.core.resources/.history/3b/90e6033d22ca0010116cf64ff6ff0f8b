@@ -1,0 +1,81 @@
+package com.example.demo.test;
+
+
+
+import com.example.demo.controller.AccountController;
+import com.example.demo.dto.CreateAccountRequest;
+import com.example.demo.model.Account;
+import com.example.demo.model.Transaction;
+import com.example.demo.service.AccountService;
+
+import tools.jackson.databind.ObjectMapper;
+
+import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(AccountController.class)
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private AccountService service;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void testCreateAccount() throws Exception {
+        Account acc = new Account();
+        acc.setAccountNumber("ACC1234");
+        acc.setHolderName("John Doe");
+
+        when(service.createAccount("John Doe")).thenReturn(acc);
+
+        CreateAccountRequest req = new CreateAccountRequest("John Doe");
+
+        mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.accountNumber").value("ACC1234"));
+    }
+
+    @Test
+    void testGetAccount() throws Exception {
+        Account acc = new Account();
+        acc.setAccountNumber("ACC1234");
+        acc.setHolderName("John Doe");
+
+        when(service.getByAccountNumber("ACC1234")).thenReturn(acc);
+
+        mockMvc.perform(get("/api/accounts/ACC1234"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.holderName").value("John Doe"));
+    }
+
+    @Test
+    void testGetTransactions() throws Exception {
+        Transaction txn = new Transaction();
+        txn.setTransactionId("TXN001");
+
+        when(service.getTransactionsFor("ACC1234")).thenReturn(Collections.singletonList(txn));
+
+        mockMvc.perform(get("/api/accounts/ACC1234/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].transactionId").value("TXN001"));
+    }
+}

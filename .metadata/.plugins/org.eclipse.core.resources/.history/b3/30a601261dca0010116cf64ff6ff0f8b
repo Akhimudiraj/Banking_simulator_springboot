@@ -1,0 +1,49 @@
+package com.example.demo.servicetest;
+
+
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
+import com.example.demo.model.Account;
+import com.example.demo.repo.AccountRepository;
+import com.example.demo.repo.TransactionRepository;
+import com.example.demo.service.AccountService;
+import com.example.demo.service.IdGenerator;
+
+import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class AccountServiceTest {
+    @Mock AccountRepository accountRepo;
+    @Mock TransactionRepository txnRepo;
+    @Mock IdGenerator idGen;
+
+    AccountService service;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        service = new AccountService(accountRepo, txnRepo, idGen);
+    }
+
+    @Test
+    void createAccount_generatesAccountAndSaves() {
+        when(idGen.generateAccountNumber("John Doe")).thenReturn("JOH1234");
+        when(accountRepo.existsByAccountNumber("JOH1234")).thenReturn(false);
+        Account saved = new Account();
+        saved.setAccountNumber("JOH1234");
+        saved.setHolderName("John Doe");
+        when(accountRepo.save(any(Account.class))).thenReturn(saved);
+
+        Account res = service.createAccount("John Doe");
+
+        assertEquals("JOH1234", res.getAccountNumber());
+        verify(accountRepo, times(1)).save(any(Account.class));
+    }
+
+    @Test
+    void deposit_invalidAmount_throws() {
+        assertThrows(IllegalArgumentException.class, () -> service.deposit("X", -10.0));
+    }
+}

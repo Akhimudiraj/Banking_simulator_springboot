@@ -1,0 +1,27 @@
+package com.example.demo.model;
+
+
+
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.Date;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Document(collection = "accounts")
+public class Account {
+    @Id
+    private String id;
+
+    private String accountNumber;
+    private String holderName;
+    private Double balance;
+    private String status; // ACTIVE or INACTIVE
+    private Date createdAt;
+
+    private List<Transaction> transactions; // optional embedded
+}

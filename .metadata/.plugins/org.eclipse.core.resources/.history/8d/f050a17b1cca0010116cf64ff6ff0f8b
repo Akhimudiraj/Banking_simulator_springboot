@@ -1,0 +1,70 @@
+package com.example.demo.controller;
+
+
+import jakarta.validation.Valid;
+import org.slf4j.*;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.dto.CreateAccountRequest;
+import com.example.demo.model.Account;
+import com.example.demo.model.Transaction;
+import com.example.demo.service.AccountService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/accounts")
+public class AccountController {
+    private final Logger log = LoggerFactory.getLogger(AccountController.class);
+    private final AccountService service;
+
+    public AccountController(AccountService service) { this.service = service; }
+
+    @PostMapping
+    public ResponseEntity<Account> createAccount(@Valid @RequestBody CreateAccountRequest req) {
+        Account created = service.createAccount(req.holderName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @GetMapping("/{accountNumber}")
+    public ResponseEntity<Account> getAccount(@PathVariable String accountNumber) {
+        Account a = service.getByAccountNumber(accountNumber);
+        return ResponseEntity.ok(a);
+    }
+
+    @PutMapping("/{accountNumber}/deposit")
+    public ResponseEntity<Transaction> deposit(@PathVariable String accountNumber, @RequestParam Double amount) {
+        Transaction t = service.deposit(accountNumber, amount);
+        return ResponseEntity.ok(t);
+    }
+
+    @PutMapping("/{accountNumber}/withdraw")
+    public ResponseEntity<Transaction> withdraw(@PathVariable String accountNumber, @RequestParam Double amount) {
+        Transaction t = service.withdraw(accountNumber, amount);
+        return ResponseEntity.ok(t);
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<Transaction> transfer(@Valid @RequestBody TransferRequest req) {
+        Transaction t = service.transfer(req.sourceAccount(), req.destinationAccount(), req.amount());
+        return ResponseEntity.status(HttpStatus.CREATED).body(t);
+    }
+
+    @GetMapping("/{accountNumber}/transactions")
+    public ResponseEntity<List<Transaction>> getTransactions(@PathVariable String accountNumber) {
+        return ResponseEntity.ok(service.getTransactionsFor(accountNumber));
+    }
+
+    @PutMapping("/{accountNumber}")
+    public ResponseEntity<Account> updateHolder(@PathVariable String accountNumber, @RequestParam String holderName) {
+        Account a = service.updateAccountHolder(accountNumber, holderName);
+        return ResponseEntity.ok(a);
+    }
+
+    @DeleteMapping("/{accountNumber}")
+    public ResponseEntity<Void> deleteAccount(@PathVariable String accountNumber) {
+        service.deleteAccount(accountNumber);
+        return ResponseEntity.noContent().build();
+    }
+}

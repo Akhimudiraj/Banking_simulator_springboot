@@ -1,0 +1,24 @@
+package com.example.demo.model;
+
+
+
+
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.Instant;
+
+@Document(collection = "transactions")
+public class Transaction {
+    @Id
+    private String id;
+    private String transactionId;
+    private String type; // DEPOSIT, WITHDRAW, TRANSFER
+    private Double amount;
+    private Instant timestamp = Instant.now();
+    private String status; // SUCCESS or FAILED
+    private String sourceAccount;
+    private String destinationAccount;
+
+    // constructors, getters, setters, toString
+}

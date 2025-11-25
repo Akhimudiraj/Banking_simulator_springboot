@@ -1,0 +1,29 @@
+package com.example.demo.model;
+
+
+
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+@Document(collection = "accounts")
+public class Account {
+    @Id
+    private String id;
+    private String accountNumber;
+    private String holderName;
+    private Double balance = 0.0;
+    private String status = "ACTIVE";
+    private Instant createdAt = Instant.now();
+    private List<String> transactionIds = new ArrayList<>();
+	public void setAccountNumber(String string) {
+		
+		
+	}
+
+    
+}
+

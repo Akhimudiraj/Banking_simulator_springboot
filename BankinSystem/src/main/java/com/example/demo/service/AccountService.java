@@ -1,0 +1,145 @@
+package com.example.demo.service;
+
+
+
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.demo.exceptions.AccountNotFoundException;
+import com.example.demo.exceptions.InsufficientBalanceException;
+import com.example.demo.exceptions.InvalidAmountException;
+import com.example.demo.model.Account;
+import com.example.demo.model.Transaction;
+import com.example.demo.repo.AccountRepository;
+import com.example.demo.repo.TransactionRepository;
+
+
+import java.util.List;
+
+@Service
+public class AccountService {
+    private final Logger log = LoggerFactory.getLogger(AccountService.class);
+    private final AccountRepository accountRepo;
+    private final TransactionRepository txnRepo;
+    private final IdGenerator idGen;
+
+    public AccountService(AccountRepository accountRepo, TransactionRepository txnRepo, IdGenerator idGen) {
+        this.accountRepo = accountRepo;
+        this.txnRepo = txnRepo;
+        this.idGen = idGen;
+    }
+
+    public Account createAccount(String holderName) {
+        String acctNum = idGen.generateAccountNumber(holderName);
+        while (accountRepo.existsByAccountNumber(acctNum)) {
+            acctNum = idGen.generateAccountNumber(holderName);
+        }
+        Account a = new Account();
+        a.setAccountNumber(acctNum);
+        a.setHolderName(holderName);
+        a.setBalance(0.0);
+        a.setStatus("ACTIVE");
+        //a.setCreatedAt(java.time.Instant.now());
+        Account saved = accountRepo.save(a);
+        log.info("Created account {}", saved.getAccountNumber());
+        return saved;
+    }
+
+    public Account getByAccountNumber(String accountNumber) {
+        return accountRepo.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountNumber));
+    }
+
+    public Account updateAccountHolder(String accountNumber, String newHolderName) {
+        Account a = getByAccountNumber(accountNumber);
+        a.setHolderName(newHolderName);
+        return accountRepo.save(a);
+    }
+
+    public void deleteAccount(String accountNumber) {
+        Account a = getByAccountNumber(accountNumber);
+        accountRepo.delete(a);
+    }
+
+    @Transactional
+    public Transaction deposit(String accountNumber, Double amount) {
+        if (amount == null || amount <= 0) throw new InvalidAmountException("Deposit amount must be positive");
+        Account a = getByAccountNumber(accountNumber);
+        a.setBalance(a.getBalance() + amount);
+        accountRepo.save(a);
+
+        Transaction t = new Transaction();
+        t.setTransactionId(idGen.generateTransactionId());
+        t.setType("DEPOSIT");
+        t.setAmount(amount);
+        t.setStatus("SUCCESS");
+        t.setDestinationAccount(accountNumber);
+        txnRepo.save(t);
+
+        a.getTransactionIds().add(t.getTransactionId());
+        accountRepo.save(a);
+        return t;
+    }
+
+    @Transactional
+    public Transaction withdraw(String accountNumber, Double amount) {
+        if (amount == null || amount <= 0) throw new InvalidAmountException("Withdraw amount must be positive");
+        Account a = getByAccountNumber(accountNumber);
+        if (a.getBalance() < amount) throw new InsufficientBalanceException("Insufficient balance");
+        a.setBalance(a.getBalance() - amount);
+        accountRepo.save(a);
+
+        Transaction t = new Transaction();
+        t.setTransactionId(idGen.generateTransactionId());
+        t.setType("WITHDRAW");
+        t.setAmount(amount);
+        t.setStatus("SUCCESS");
+        t.setSourceAccount(accountNumber);
+        txnRepo.save(t);
+
+        a.getTransactionIds().add(t.getTransactionId());
+        accountRepo.save(a);
+        return t;
+    }
+
+    @Transactional
+    public Transaction transfer(String src, String dest, Double amount) {
+        if (amount == null || amount <= 0) throw new InvalidAmountException("Transfer amount must be positive");
+        if (src.equals(dest)) throw new IllegalArgumentException("Source and destination cannot be same");
+        Account aSrc = getByAccountNumber(src);
+        Account aDest = getByAccountNumber(dest);
+
+        if (aSrc.getBalance() < amount) throw new InsufficientBalanceException("Insufficient balance in source");
+
+        aSrc.setBalance(aSrc.getBalance() - amount);
+        aDest.setBalance(aDest.getBalance() + amount);
+
+        accountRepo.save(aSrc);
+        accountRepo.save(aDest);
+
+        Transaction t = new Transaction();
+        t.setTransactionId(idGen.generateTransactionId());
+        t.setType("TRANSFER");
+        t.setAmount(amount);
+        t.setStatus("SUCCESS");
+        t.setSourceAccount(src);
+        t.setDestinationAccount(dest);
+        txnRepo.save(t);
+
+        aSrc.getTransactionIds().add(t.getTransactionId());
+        aDest.getTransactionIds().add(t.getTransactionId());
+        accountRepo.save(aSrc);
+        accountRepo.save(aDest);
+
+        return t;
+    }
+
+    public List<Transaction> getTransactionsFor(String accountNumber) {
+        getByAccountNumber(accountNumber);
+        return txnRepo.findBySourceAccountOrDestinationAccount(accountNumber, accountNumber);
+    }
+}
